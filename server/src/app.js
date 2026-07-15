@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import healthRoutes from './routes/health.routes.js'
+import authRoutes from './routes/auth.routes.js'
 import usersRoutes from './routes/users.routes.js'
 import merchantsRoutes from './routes/merchants.routes.js'
 import walletsRoutes from './routes/wallets.routes.js'
@@ -18,6 +19,7 @@ app.use(express.json())
 
 app.use('/health', healthRoutes)
 
+app.use('/api/auth', authRoutes)
 app.use('/api/users', usersRoutes)
 app.use('/api/merchants', merchantsRoutes)
 app.use('/api/wallets', walletsRoutes)
