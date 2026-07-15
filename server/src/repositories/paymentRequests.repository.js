@@ -32,9 +32,33 @@ export async function findById(id) {
   }
 }
 
+// Locks the row for the duration of the caller's transaction. Only meaningful
+// when `client` is a checked-out client already inside a BEGIN/COMMIT block
+// (see approvePayment/rejectPayment below).
+export async function findByIdForUpdate(id, client = pool) {
+  try {
+    const result = await client.query('SELECT * FROM payment_requests WHERE id = $1 FOR UPDATE', [id])
+    return result.rows[0] ?? null
+  } catch (error) {
+    throw error
+  }
+}
+
 export async function findAll() {
   try {
     const result = await pool.query('SELECT * FROM payment_requests ORDER BY created_at DESC')
+    return result.rows
+  } catch (error) {
+    throw error
+  }
+}
+
+export async function findAllByRequestedBy(userId) {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM payment_requests WHERE requested_by = $1 ORDER BY created_at DESC',
+      [userId],
+    )
     return result.rows
   } catch (error) {
     throw error
@@ -53,9 +77,9 @@ export async function findAllByWalletId(walletId) {
   }
 }
 
-export async function update(id, { amount, purpose, aiConfidence, riskLevel, status } = {}) {
+export async function update(id, { amount, purpose, aiConfidence, riskLevel, status } = {}, client = pool) {
   try {
-    const result = await pool.query(
+    const result = await client.query(
       `UPDATE payment_requests
        SET amount = COALESCE($2, amount),
            purpose = COALESCE($3, purpose),

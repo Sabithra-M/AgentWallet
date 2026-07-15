@@ -2,7 +2,7 @@ import * as paymentApprovalsService from '../services/paymentApprovals.service.j
 
 export async function create(req, res, next) {
   try {
-    const paymentApproval = await paymentApprovalsService.create(req.body)
+    const paymentApproval = await paymentApprovalsService.create(req.user.id, req.body)
     res.status(201).json(paymentApproval)
   } catch (error) {
     next(error)
@@ -11,7 +11,7 @@ export async function create(req, res, next) {
 
 export async function findById(req, res, next) {
   try {
-    const paymentApproval = await paymentApprovalsService.findById(req.params.id)
+    const paymentApproval = await paymentApprovalsService.findById(req.params.id, req.user.id)
     if (!paymentApproval) {
       return res.status(404).json({ error: 'Resource not found' })
     }
@@ -23,7 +23,7 @@ export async function findById(req, res, next) {
 
 export async function findAll(req, res, next) {
   try {
-    const paymentApprovals = await paymentApprovalsService.findAll()
+    const paymentApprovals = await paymentApprovalsService.findAll(req.user.id)
     res.status(200).json(paymentApprovals)
   } catch (error) {
     next(error)
@@ -32,7 +32,7 @@ export async function findAll(req, res, next) {
 
 export async function update(req, res, next) {
   try {
-    const paymentApproval = await paymentApprovalsService.update(req.params.id, req.body)
+    const paymentApproval = await paymentApprovalsService.update(req.params.id, req.user.id, req.body)
     if (!paymentApproval) {
       return res.status(404).json({ error: 'Resource not found' })
     }
@@ -44,7 +44,7 @@ export async function update(req, res, next) {
 
 export async function remove(req, res, next) {
   try {
-    const paymentApproval = await paymentApprovalsService.remove(req.params.id)
+    const paymentApproval = await paymentApprovalsService.remove(req.params.id, req.user.id)
     if (!paymentApproval) {
       return res.status(404).json({ error: 'Resource not found' })
     }

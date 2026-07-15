@@ -32,6 +32,22 @@ export async function findAll() {
   }
 }
 
+export async function findAllByUserId(userId) {
+  try {
+    const result = await pool.query(
+      `SELECT wp.*
+       FROM wallet_policies wp
+       JOIN wallets w ON wp.wallet_id = w.id
+       WHERE w.user_id = $1
+       ORDER BY wp.created_at DESC`,
+      [userId],
+    )
+    return result.rows
+  } catch (error) {
+    throw error
+  }
+}
+
 export async function findAllByWalletId(walletId) {
   try {
     const result = await pool.query(

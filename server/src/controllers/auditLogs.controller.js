@@ -2,7 +2,7 @@ import * as auditLogsService from '../services/auditLogs.service.js'
 
 export async function create(req, res, next) {
   try {
-    const auditLog = await auditLogsService.create(req.body)
+    const auditLog = await auditLogsService.create(req.user.id, req.body)
     res.status(201).json(auditLog)
   } catch (error) {
     next(error)
@@ -11,7 +11,7 @@ export async function create(req, res, next) {
 
 export async function findById(req, res, next) {
   try {
-    const auditLog = await auditLogsService.findById(req.params.id)
+    const auditLog = await auditLogsService.findById(req.params.id, req.user.id)
     if (!auditLog) {
       return res.status(404).json({ error: 'Resource not found' })
     }
@@ -23,7 +23,7 @@ export async function findById(req, res, next) {
 
 export async function findAll(req, res, next) {
   try {
-    const auditLogs = await auditLogsService.findAll()
+    const auditLogs = await auditLogsService.findAll(req.user.id)
     res.status(200).json(auditLogs)
   } catch (error) {
     next(error)
@@ -35,7 +35,7 @@ export async function findAll(req, res, next) {
 
 export async function remove(req, res, next) {
   try {
-    const auditLog = await auditLogsService.remove(req.params.id)
+    const auditLog = await auditLogsService.remove(req.params.id, req.user.id)
     if (!auditLog) {
       return res.status(404).json({ error: 'Resource not found' })
     }

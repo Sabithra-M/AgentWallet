@@ -2,6 +2,10 @@ import * as paymentRequestsRepository from '../repositories/paymentRequests.repo
 import * as walletsRepository from '../repositories/wallets.repository.js'
 import * as merchantsRepository from '../repositories/merchants.repository.js'
 import * as walletPoliciesRepository from '../repositories/walletPolicies.repository.js'
+import * as paymentApprovalsRepository from '../repositories/paymentApprovals.repository.js'
+import * as paymentTransactionsRepository from '../repositories/paymentTransactions.repository.js'
+import * as auditLogsRepository from '../repositories/auditLogs.repository.js'
+import { pool } from '../db/index.js'
 
 const ACTIVE_REQUEST_STATUSES = ['pending', 'approved']
 
@@ -84,32 +88,116 @@ export async function create(userId, data) {
   }
 }
 
-export async function findById(id) {
+async function decidePayment(requestId, userId, decision, reason) {
+  const client = await pool.connect()
   try {
-    return await paymentRequestsRepository.findById(id)
+    await client.query('BEGIN')
+
+    const paymentRequest = await paymentRequestsRepository.findByIdForUpdate(requestId, client)
+    if (!paymentRequest) fail(404, 'Payment request not found')
+
+    const wallet = await walletsRepository.findByIdForUpdate(paymentRequest.wallet_id, client)
+    if (!wallet) fail(404, 'Wallet not found')
+
+    if (wallet.user_id !== userId) fail(403, 'Only the wallet owner can approve or reject this request')
+    if (paymentRequest.status !== 'pending') {
+      fail(409, `Payment request has already been ${paymentRequest.status}`)
+    }
+
+    const approval = await paymentApprovalsRepository.create(
+      { paymentRequestId: requestId, decidedBy: userId, decision, reason },
+      client,
+    )
+
+    const updatedRequest = await paymentRequestsRepository.update(requestId, { status: decision }, client)
+
+    let transaction = null
+    if (decision === 'approved') {
+      if (Number(wallet.balance) < Number(paymentRequest.amount)) {
+        fail(403, 'Insufficient wallet balance to approve this request')
+      }
+
+      const newBalance = Number(wallet.balance) - Number(paymentRequest.amount)
+      await walletsRepository.update(wallet.id, { balance: newBalance }, client)
+
+      transaction = await paymentTransactionsRepository.create(
+        {
+          paymentRequestId: requestId,
+          walletId: wallet.id,
+          merchantId: paymentRequest.merchant_id,
+          amount: paymentRequest.amount,
+          type: 'debit',
+          status: 'completed',
+        },
+        client,
+      )
+    }
+
+    await auditLogsRepository.create(
+      {
+        userId,
+        action: `payment_request.${decision}`,
+        entityType: 'payment_request',
+        entityId: requestId,
+        metadata: { reason: reason ?? null },
+      },
+      client,
+    )
+
+    await client.query('COMMIT')
+
+    return { paymentRequest: updatedRequest, approval, transaction }
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {})
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+export async function approvePayment(requestId, userId, reason = null) {
+  return decidePayment(requestId, userId, 'approved', reason)
+}
+
+export async function rejectPayment(requestId, userId, reason = null) {
+  return decidePayment(requestId, userId, 'rejected', reason)
+}
+
+export async function findById(id, userId) {
+  try {
+    const paymentRequest = await paymentRequestsRepository.findById(id)
+    if (!paymentRequest) return null
+    if (paymentRequest.requested_by !== userId) fail(403, 'You do not have access to this payment request')
+    return paymentRequest
   } catch (error) {
     throw error
   }
 }
 
-export async function findAll() {
+export async function findAll(userId) {
   try {
-    return await paymentRequestsRepository.findAll()
+    return await paymentRequestsRepository.findAllByRequestedBy(userId)
   } catch (error) {
     throw error
   }
 }
 
-export async function update(id, data) {
+export async function update(id, userId, data) {
   try {
+    const paymentRequest = await paymentRequestsRepository.findById(id)
+    if (!paymentRequest) return null
+    if (paymentRequest.requested_by !== userId) fail(403, 'You do not have access to this payment request')
     return await paymentRequestsRepository.update(id, data)
   } catch (error) {
     throw error
   }
 }
 
-export async function remove(id) {
+export async function remove(id, userId) {
   try {
+    const paymentRequest = await paymentRequestsRepository.findById(id)
+    if (!paymentRequest) return null
+    if (paymentRequest.requested_by !== userId) fail(403, 'You do not have access to this payment request')
     return await paymentRequestsRepository.remove(id)
   } catch (error) {
     throw error

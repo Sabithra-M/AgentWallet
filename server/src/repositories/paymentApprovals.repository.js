@@ -1,8 +1,11 @@
 import { pool } from '../db/index.js'
 
-export async function create({ paymentRequestId, decidedBy = null, decision, reason = null, decidedAt = null }) {
+export async function create(
+  { paymentRequestId, decidedBy = null, decision, reason = null, decidedAt = null },
+  client = pool,
+) {
   try {
-    const result = await pool.query(
+    const result = await client.query(
       `INSERT INTO payment_approvals (payment_request_id, decided_by, decision, reason, decided_at)
        VALUES ($1, $2, $3, $4, COALESCE($5, now()))
        RETURNING *`,
@@ -26,6 +29,22 @@ export async function findById(id) {
 export async function findAll() {
   try {
     const result = await pool.query('SELECT * FROM payment_approvals ORDER BY created_at DESC')
+    return result.rows
+  } catch (error) {
+    throw error
+  }
+}
+
+export async function findAllByRequestedBy(userId) {
+  try {
+    const result = await pool.query(
+      `SELECT pa.*
+       FROM payment_approvals pa
+       JOIN payment_requests pr ON pa.payment_request_id = pr.id
+       WHERE pr.requested_by = $1
+       ORDER BY pa.created_at DESC`,
+      [userId],
+    )
     return result.rows
   } catch (error) {
     throw error

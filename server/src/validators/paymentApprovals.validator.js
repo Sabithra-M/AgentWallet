@@ -8,9 +8,6 @@ export function validateCreate(body = {}) {
   if (!isOneOf(body.decision, DECISIONS)) {
     errors.push(`decision is required and must be one of: ${DECISIONS.join(', ')}`)
   }
-  if (body.decidedBy !== undefined && body.decidedBy !== null && !isUuid(body.decidedBy)) {
-    errors.push('decidedBy must be a valid UUID')
-  }
   if (body.reason !== undefined && typeof body.reason !== 'string') errors.push('reason must be a string')
   if (body.decidedAt !== undefined && !isIsoDateString(body.decidedAt)) {
     errors.push('decidedAt must be a valid date string')

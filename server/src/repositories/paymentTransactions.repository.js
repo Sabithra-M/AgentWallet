@@ -1,18 +1,21 @@
 import { pool } from '../db/index.js'
 
-export async function create({
-  paymentRequestId = null,
-  walletId,
-  merchantId = null,
-  amount,
-  currency = 'INR',
-  type,
-  status = 'completed',
-  paymentMethod = null,
-  transactedAt = null,
-}) {
+export async function create(
+  {
+    paymentRequestId = null,
+    walletId,
+    merchantId = null,
+    amount,
+    currency = 'INR',
+    type,
+    status = 'completed',
+    paymentMethod = null,
+    transactedAt = null,
+  },
+  client = pool,
+) {
   try {
-    const result = await pool.query(
+    const result = await client.query(
       `INSERT INTO payment_transactions
          (payment_request_id, wallet_id, merchant_id, amount, currency, type, status, payment_method, transacted_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE($9, now()))
@@ -37,6 +40,22 @@ export async function findById(id) {
 export async function findAll() {
   try {
     const result = await pool.query('SELECT * FROM payment_transactions ORDER BY created_at DESC')
+    return result.rows
+  } catch (error) {
+    throw error
+  }
+}
+
+export async function findAllByUserId(userId) {
+  try {
+    const result = await pool.query(
+      `SELECT pt.*
+       FROM payment_transactions pt
+       JOIN wallets w ON pt.wallet_id = w.id
+       WHERE w.user_id = $1
+       ORDER BY pt.created_at DESC`,
+      [userId],
+    )
     return result.rows
   } catch (error) {
     throw error

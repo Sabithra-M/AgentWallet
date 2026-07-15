@@ -1,8 +1,8 @@
 import { pool } from '../db/index.js'
 
-export async function create({ userId = null, action, entityType, entityId = null, metadata = {} }) {
+export async function create({ userId = null, action, entityType, entityId = null, metadata = {} }, client = pool) {
   try {
-    const result = await pool.query(
+    const result = await client.query(
       `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, metadata)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
@@ -26,6 +26,18 @@ export async function findById(id) {
 export async function findAll() {
   try {
     const result = await pool.query('SELECT * FROM audit_logs ORDER BY created_at DESC')
+    return result.rows
+  } catch (error) {
+    throw error
+  }
+}
+
+export async function findAllByUserId(userId) {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM audit_logs WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId],
+    )
     return result.rows
   } catch (error) {
     throw error
