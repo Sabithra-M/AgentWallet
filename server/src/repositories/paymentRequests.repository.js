@@ -41,6 +41,18 @@ export async function findAll() {
   }
 }
 
+export async function findAllByWalletId(walletId) {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM payment_requests WHERE wallet_id = $1 ORDER BY created_at DESC',
+      [walletId],
+    )
+    return result.rows
+  } catch (error) {
+    throw error
+  }
+}
+
 export async function update(id, { amount, purpose, aiConfidence, riskLevel, status } = {}) {
   try {
     const result = await pool.query(

@@ -1,10 +1,9 @@
-import { isNonEmptyString, isUuid, isNumber, isOneOf } from './common.js'
+import { isNonEmptyString, isNumber, isOneOf } from './common.js'
 
 const STATUS_VALUES = ['active', 'paused', 'closed']
 
 export function validateCreate(body = {}) {
   const errors = []
-  if (!isUuid(body.userId)) errors.push('userId is required and must be a valid UUID')
   if (!isNonEmptyString(body.name)) errors.push('name is required and must be a non-empty string')
   if (!isNonEmptyString(body.category)) errors.push('category is required and must be a non-empty string')
   if (body.description !== undefined && typeof body.description !== 'string') errors.push('description must be a string')

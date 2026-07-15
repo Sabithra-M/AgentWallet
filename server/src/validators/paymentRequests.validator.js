@@ -7,7 +7,6 @@ export function validateCreate(body = {}) {
   const errors = []
   if (!isUuid(body.walletId)) errors.push('walletId is required and must be a valid UUID')
   if (!isUuid(body.merchantId)) errors.push('merchantId is required and must be a valid UUID')
-  if (!isUuid(body.requestedBy)) errors.push('requestedBy is required and must be a valid UUID')
   if (!isNumber(body.amount) || body.amount <= 0) {
     errors.push('amount is required and must be a number greater than 0')
   }

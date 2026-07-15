@@ -42,6 +42,18 @@ export async function findAll() {
   }
 }
 
+export async function findAllByUserId(userId) {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM wallets WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId],
+    )
+    return result.rows
+  } catch (error) {
+    throw error
+  }
+}
+
 export async function update(
   id,
   { name, category, description, currency, balance, budget, monthlyLimit, status } = {},

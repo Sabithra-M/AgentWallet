@@ -2,7 +2,7 @@ import * as paymentRequestsService from '../services/paymentRequests.service.js'
 
 export async function create(req, res, next) {
   try {
-    const paymentRequest = await paymentRequestsService.create(req.body)
+    const paymentRequest = await paymentRequestsService.create(req.user.id, req.body)
     res.status(201).json(paymentRequest)
   } catch (error) {
     next(error)

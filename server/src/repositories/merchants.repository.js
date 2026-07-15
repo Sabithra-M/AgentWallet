@@ -1,12 +1,12 @@
 import { pool } from '../db/index.js'
 
-export async function create({ name, category = null, isVerified = false }) {
+export async function create({ userId, name, category = null, isVerified = false }) {
   try {
     const result = await pool.query(
-      `INSERT INTO merchants (name, category, is_verified)
-       VALUES ($1, $2, $3)
+      `INSERT INTO merchants (user_id, name, category, is_verified)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [name, category, isVerified],
+      [userId, name, category, isVerified],
     )
     return result.rows[0]
   } catch (error) {
@@ -26,6 +26,18 @@ export async function findById(id) {
 export async function findAll() {
   try {
     const result = await pool.query('SELECT * FROM merchants ORDER BY created_at DESC')
+    return result.rows
+  } catch (error) {
+    throw error
+  }
+}
+
+export async function findAllByUserId(userId) {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM merchants WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId],
+    )
     return result.rows
   } catch (error) {
     throw error
