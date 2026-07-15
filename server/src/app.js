@@ -10,6 +10,7 @@ import paymentRequestsRoutes from './routes/paymentRequests.routes.js'
 import paymentApprovalsRoutes from './routes/paymentApprovals.routes.js'
 import paymentTransactionsRoutes from './routes/paymentTransactions.routes.js'
 import auditLogsRoutes from './routes/auditLogs.routes.js'
+import { authenticate } from './middleware/authenticate.js'
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
@@ -20,14 +21,14 @@ app.use(express.json())
 app.use('/health', healthRoutes)
 
 app.use('/api/auth', authRoutes)
-app.use('/api/users', usersRoutes)
-app.use('/api/merchants', merchantsRoutes)
-app.use('/api/wallets', walletsRoutes)
-app.use('/api/wallet-policies', walletPoliciesRoutes)
-app.use('/api/payment-requests', paymentRequestsRoutes)
-app.use('/api/payment-approvals', paymentApprovalsRoutes)
-app.use('/api/payment-transactions', paymentTransactionsRoutes)
-app.use('/api/audit-logs', auditLogsRoutes)
+app.use('/api/users', authenticate, usersRoutes)
+app.use('/api/merchants', authenticate, merchantsRoutes)
+app.use('/api/wallets', authenticate, walletsRoutes)
+app.use('/api/wallet-policies', authenticate, walletPoliciesRoutes)
+app.use('/api/payment-requests', authenticate, paymentRequestsRoutes)
+app.use('/api/payment-approvals', authenticate, paymentApprovalsRoutes)
+app.use('/api/payment-transactions', authenticate, paymentTransactionsRoutes)
+app.use('/api/audit-logs', authenticate, auditLogsRoutes)
 
 app.use(notFoundHandler)
 app.use(errorHandler)
