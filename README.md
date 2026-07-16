@@ -20,58 +20,96 @@ AgentWallet is an AI payment authorization platform. Users fund a Main Wallet, a
 
 ## Architecture
 
+### 1. Overall System Architecture
+
 ```mermaid
 flowchart LR
-    subgraph Client["Client (React + Vite)"]
-        UI[Pages & Components]
-        Ctx[AuthContext / AppContext]
-        SSEClient[SSE client\nauto-reconnect]
+    subgraph Client
+        UI["Pages and Components"]
+        Ctx["AuthContext and AppContext"]
+        SSEClient["SSE Client with auto-reconnect"]
     end
 
-    subgraph Server["Server (Express)"]
-        MW[authenticate / validate /\nrateLimit middleware]
-        Ctrl[Controllers]
-        Svc[Services\nbusiness logic + fail()]
-        Repo[Repositories\nparameterized SQL]
+    subgraph Server
+        MW["Middleware: authenticate, validate, rate limit"]
+        Ctrl["Controllers"]
+        Svc["Services"]
+        Repo["Repositories"]
     end
 
-    DB[(PostgreSQL — Neon)]
-    Gemini[Gemini API]
-    Firebase[Firebase Admin\nGoogle Sign-In]
-    SMTP[SMTP\npassword reset emails]
+    DB["PostgreSQL - Neon"]
+    Gemini["Gemini API"]
+    Firebase["Firebase Admin - Google Sign-In"]
+    SMTP["SMTP - password reset emails"]
 
-    UI --> Ctx --> MW
-    SSEClient -. EventSource .-> MW
-    MW --> Ctrl --> Svc --> Repo --> DB
+    UI --> Ctx
+    Ctx --> MW
+    SSEClient -->|EventSource| MW
+    MW --> Ctrl
+    Ctrl --> Svc
+    Svc --> Repo
+    Repo --> DB
     Svc --> Gemini
     Svc --> Firebase
     Svc --> SMTP
 ```
 
-**Request flow for an AI-initiated payment:**
+### 2. AI Payment Flow
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Assistant as AI Assistant (Gemini)
+    participant Assistant as AI Assistant
     participant Risk as Risk Engine
     participant Policy as Policy Evaluation Engine
     participant DB as PostgreSQL
-    participant Alerts as Alerts (SSE)
+    participant Alerts as Alerts Service
 
-    User->>Assistant: "Book a flight for ₹2500"
-    Assistant->>Assistant: detect payment intent
-    Assistant->>Risk: calculateRisk(wallet, merchant, amount, ...)
-    Risk-->>Assistant: { score, level, factors }
-    Assistant->>Policy: evaluate(wallet, policy, amount, ...)
-    Policy-->>Assistant: { status: approved | blocked, reason }
-    Assistant->>DB: write payment_request + timeline events (+ virtual_card if approved)
-    Assistant->>Alerts: createForPaymentDecision()
-    Alerts-->>User: live alert over SSE
-    Assistant-->>User: reply + (if approved) virtual card
+    User->>Assistant: Book a flight for INR 2500
+    Assistant->>Assistant: Detect payment intent
+    Assistant->>Risk: Calculate risk score
+    Risk-->>Assistant: Risk score and level
+    Assistant->>Policy: Evaluate against wallet policy
+    Policy-->>Assistant: Approved or blocked
+    Assistant->>DB: Save payment request and timeline events
+    Assistant->>Alerts: Create alert for decision
+    Alerts-->>User: Live alert over SSE
+    Assistant-->>User: Reply with result and virtual card if approved
 ```
 
 Both the Risk Engine and Policy Evaluation Engine are pure, DB-free functions — they take the data they need as arguments and return a decision, which keeps them independently testable and reusable across the manual and AI-driven payment-creation paths.
+
+### 3. Policy Evaluation Flow
+
+The Policy Evaluation Engine checks eleven rules in a fixed order against a single payment request. The first rule that fails blocks the request with a specific reason; passing all eleven approves it and issues a virtual card.
+
+```mermaid
+flowchart TD
+    Start(["Payment request"]) --> CheckWallet{"Wallet active?"}
+    CheckWallet -- No --> B1["Blocked: wallet inactive"]
+    CheckWallet -- Yes --> CheckExpired{"Wallet expired?"}
+    CheckExpired -- Yes --> B2["Blocked: wallet expired"]
+    CheckExpired -- No --> CheckPolicy{"Policy exists and enabled?"}
+    CheckPolicy -- No --> B3["Blocked: no policy or disabled"]
+    CheckPolicy -- Yes --> CheckBudget{"Within wallet budget?"}
+    CheckBudget -- No --> B4["Blocked: budget exceeded"]
+    CheckBudget -- Yes --> CheckPerTx{"Within per-transaction limit?"}
+    CheckPerTx -- No --> B5["Blocked: per-transaction limit exceeded"]
+    CheckPerTx -- Yes --> CheckDaily{"Within daily limit?"}
+    CheckDaily -- No --> B6["Blocked: daily limit exceeded"]
+    CheckDaily -- Yes --> CheckMonthly{"Within monthly limit?"}
+    CheckMonthly -- No --> B7["Blocked: monthly limit exceeded"]
+    CheckMonthly -- Yes --> CheckMerchant{"Merchant allowed?"}
+    CheckMerchant -- No --> B8["Blocked: merchant not allowed"]
+    CheckMerchant -- Yes --> CheckCategory{"Category blocked?"}
+    CheckCategory -- Yes --> B9["Blocked: category restricted"]
+    CheckCategory -- No --> CheckPin{"Above PIN threshold?"}
+    CheckPin -- Yes --> B10["Blocked: PIN required"]
+    CheckPin -- No --> CheckMain{"Main wallet balance sufficient?"}
+    CheckMain -- No --> B11["Blocked: insufficient main wallet balance"]
+    CheckMain -- Yes --> Approve["Approved"]
+    Approve --> Card["Generate virtual card"]
+```
 
 ## Folder Structure
 
