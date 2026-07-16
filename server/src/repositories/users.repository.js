@@ -51,6 +51,50 @@ export async function update(id, { name, email, passwordHash, role, isActive } =
   }
 }
 
+export async function updateSettings(
+  id,
+  {
+    theme,
+    notificationsEnabled,
+    emailAlertsEnabled,
+    pushNotificationsEnabled,
+    darkModeEnabled,
+    defaultWalletId,
+    monthlySpendingLimit,
+    preferredCurrency,
+  } = {},
+) {
+  try {
+    const result = await pool.query(
+      `UPDATE users
+       SET theme = COALESCE($2, theme),
+           notifications_enabled = COALESCE($3, notifications_enabled),
+           email_alerts_enabled = COALESCE($4, email_alerts_enabled),
+           push_notifications_enabled = COALESCE($5, push_notifications_enabled),
+           dark_mode_enabled = COALESCE($6, dark_mode_enabled),
+           default_wallet_id = COALESCE($7, default_wallet_id),
+           monthly_spending_limit = COALESCE($8, monthly_spending_limit),
+           preferred_currency = COALESCE($9, preferred_currency)
+       WHERE id = $1
+       RETURNING *`,
+      [
+        id,
+        theme ?? null,
+        notificationsEnabled ?? null,
+        emailAlertsEnabled ?? null,
+        pushNotificationsEnabled ?? null,
+        darkModeEnabled ?? null,
+        defaultWalletId ?? null,
+        monthlySpendingLimit ?? null,
+        preferredCurrency ?? null,
+      ],
+    )
+    return result.rows[0] ?? null
+  } catch (error) {
+    throw error
+  }
+}
+
 export async function remove(id) {
   try {
     const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING *', [id])

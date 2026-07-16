@@ -1,11 +1,12 @@
-import { Check, X, Eye } from 'lucide-react'
+import { memo } from 'react'
+import { Check, X } from 'lucide-react'
 import Card from '../common/Card.jsx'
 import Badge from '../common/Badge.jsx'
 import Button from '../common/Button.jsx'
 import WalletIcon from '../wallet/WalletIcon.jsx'
 import { formatCurrency } from '../../utils/formatCurrency.js'
 
-function ApprovalCard({ approval }) {
+function ApprovalCard({ approval, onApprove, onReject, isActionPending = false }) {
   const isPending = approval.status === 'Pending'
 
   return (
@@ -34,28 +35,32 @@ function ApprovalCard({ approval }) {
 
       <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">{approval.reason}</p>
 
-      <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-        {isPending && (
-          <>
-            <Button type="button" variant="success" icon={<Check size={16} />} className="flex-1 justify-center">
-              Approve
-            </Button>
-            <Button type="button" variant="danger" icon={<X size={16} />} className="flex-1 justify-center">
-              Reject
-            </Button>
-          </>
-        )}
-        <Button
-          type="button"
-          variant="outline"
-          icon={<Eye size={16} />}
-          className={isPending ? '' : 'flex-1 justify-center'}
-        >
-          View Details
-        </Button>
-      </div>
+      {isPending && (
+        <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+          <Button
+            type="button"
+            variant="success"
+            icon={<Check size={16} />}
+            className="flex-1 justify-center"
+            disabled={isActionPending}
+            onClick={() => onApprove?.(approval)}
+          >
+            Approve
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            icon={<X size={16} />}
+            className="flex-1 justify-center"
+            disabled={isActionPending}
+            onClick={() => onReject?.(approval)}
+          >
+            Reject
+          </Button>
+        </div>
+      )}
     </Card>
   )
 }
 
-export default ApprovalCard
+export default memo(ApprovalCard)

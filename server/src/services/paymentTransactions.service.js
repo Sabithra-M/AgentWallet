@@ -1,11 +1,7 @@
 import * as paymentTransactionsRepository from '../repositories/paymentTransactions.repository.js'
 import * as walletsRepository from '../repositories/wallets.repository.js'
+import { fail } from '../utils/httpError.js'
 
-function fail(status, message) {
-  const error = new Error(message)
-  error.status = status
-  throw error
-}
 
 async function assertWalletOwnership(walletId, userId) {
   const wallet = await walletsRepository.findById(walletId)

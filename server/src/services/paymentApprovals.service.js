@@ -1,11 +1,7 @@
 import * as paymentApprovalsRepository from '../repositories/paymentApprovals.repository.js'
 import * as paymentRequestsRepository from '../repositories/paymentRequests.repository.js'
+import { fail } from '../utils/httpError.js'
 
-function fail(status, message) {
-  const error = new Error(message)
-  error.status = status
-  throw error
-}
 
 async function assertRequestOwnership(paymentRequestId, userId) {
   const paymentRequest = await paymentRequestsRepository.findById(paymentRequestId)

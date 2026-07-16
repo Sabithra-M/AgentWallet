@@ -29,6 +29,15 @@ export async function reject(req, res, next) {
   }
 }
 
+export async function execute(req, res, next) {
+  try {
+    const transaction = await paymentRequestsService.executePayment(req.params.id, req.user.id)
+    res.status(200).json(transaction)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export async function findById(req, res, next) {
   try {
     const paymentRequest = await paymentRequestsService.findById(req.params.id, req.user.id)
@@ -45,6 +54,18 @@ export async function findAll(req, res, next) {
   try {
     const paymentRequests = await paymentRequestsService.findAll(req.user.id)
     res.status(200).json(paymentRequests)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function findTimeline(req, res, next) {
+  try {
+    const timeline = await paymentRequestsService.findTimeline(req.params.id, req.user.id)
+    if (!timeline) {
+      return res.status(404).json({ error: 'Resource not found' })
+    }
+    res.status(200).json(timeline)
   } catch (error) {
     next(error)
   }

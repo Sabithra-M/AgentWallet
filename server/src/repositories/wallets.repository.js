@@ -1,22 +1,27 @@
 import { pool } from '../db/index.js'
 
-export async function create({
-  userId,
-  name,
-  category,
-  description = null,
-  currency = 'INR',
-  balance = 0,
-  budget = 0,
-  monthlyLimit = 0,
-  status = 'active',
-}) {
+export async function create(
+  {
+    userId,
+    name,
+    category,
+    description = null,
+    currency = 'INR',
+    balance = 0,
+    budget = 0,
+    monthlyLimit = 0,
+    status = 'active',
+    isMain = false,
+    expiresAt = null,
+  },
+  client = pool,
+) {
   try {
-    const result = await pool.query(
-      `INSERT INTO wallets (user_id, name, category, description, currency, balance, budget, monthly_limit, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    const result = await client.query(
+      `INSERT INTO wallets (user_id, name, category, description, currency, balance, budget, monthly_limit, status, is_main, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
-      [userId, name, category, description, currency, balance, budget, monthlyLimit, status],
+      [userId, name, category, description, currency, balance, budget, monthlyLimit, status, isMain, expiresAt],
     )
     return result.rows[0]
   } catch (error) {
@@ -39,6 +44,18 @@ export async function findById(id) {
 export async function findByIdForUpdate(id, client = pool) {
   try {
     const result = await client.query('SELECT * FROM wallets WHERE id = $1 FOR UPDATE', [id])
+    return result.rows[0] ?? null
+  } catch (error) {
+    throw error
+  }
+}
+
+export async function findMainByUserIdForUpdate(userId, client = pool) {
+  try {
+    const result = await client.query(
+      'SELECT * FROM wallets WHERE user_id = $1 AND is_main = true FOR UPDATE',
+      [userId],
+    )
     return result.rows[0] ?? null
   } catch (error) {
     throw error
@@ -68,7 +85,7 @@ export async function findAllByUserId(userId) {
 
 export async function update(
   id,
-  { name, category, description, currency, balance, budget, monthlyLimit, status } = {},
+  { name, category, description, currency, balance, budget, monthlyLimit, status, expiresAt } = {},
   client = pool,
 ) {
   try {
@@ -81,7 +98,8 @@ export async function update(
            balance = COALESCE($6, balance),
            budget = COALESCE($7, budget),
            monthly_limit = COALESCE($8, monthly_limit),
-           status = COALESCE($9, status)
+           status = COALESCE($9, status),
+           expires_at = COALESCE($10, expires_at)
        WHERE id = $1
        RETURNING *`,
       [
@@ -94,6 +112,7 @@ export async function update(
         budget ?? null,
         monthlyLimit ?? null,
         status ?? null,
+        expiresAt ?? null,
       ],
     )
     return result.rows[0] ?? null
@@ -102,9 +121,9 @@ export async function update(
   }
 }
 
-export async function remove(id) {
+export async function remove(id, client = pool) {
   try {
-    const result = await pool.query('DELETE FROM wallets WHERE id = $1 RETURNING *', [id])
+    const result = await client.query('DELETE FROM wallets WHERE id = $1 RETURNING *', [id])
     return result.rows[0] ?? null
   } catch (error) {
     throw error

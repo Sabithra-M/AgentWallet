@@ -42,6 +42,24 @@ export async function update(req, res, next) {
   }
 }
 
+export async function createAiWallet(req, res, next) {
+  try {
+    const wallet = await walletsService.createAiWallet(req.user.id, req.body)
+    res.status(201).json(wallet)
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function addMoney(req, res, next) {
+  try {
+    const result = await walletsService.addMoney(req.params.id, req.user.id, req.body.amount)
+    res.status(200).json(result)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export async function remove(req, res, next) {
   try {
     const wallet = await walletsService.remove(req.params.id, req.user.id)

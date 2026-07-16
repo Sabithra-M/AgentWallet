@@ -23,6 +23,18 @@ export async function findById(id) {
   }
 }
 
+export async function findByUserIdAndName(userId, name) {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM merchants WHERE user_id = $1 AND lower(name) = lower($2)',
+      [userId, name],
+    )
+    return result.rows[0] ?? null
+  } catch (error) {
+    throw error
+  }
+}
+
 export async function findAll() {
   try {
     const result = await pool.query('SELECT * FROM merchants ORDER BY created_at DESC')

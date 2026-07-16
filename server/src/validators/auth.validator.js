@@ -16,3 +16,24 @@ export function validateLogin(body = {}) {
   if (!isNonEmptyString(body.password)) errors.push('password is required')
   return errors
 }
+
+export function validateForgotPassword(body = {}) {
+  const errors = []
+  if (!isEmail(body.email)) errors.push('email is required and must be a valid email address')
+  return errors
+}
+
+export function validateResetPassword(body = {}) {
+  const errors = []
+  if (!isNonEmptyString(body.token)) errors.push('token is required')
+  if (!isNonEmptyString(body.password) || body.password.length < 8) {
+    errors.push('password is required and must be at least 8 characters long')
+  }
+  return errors
+}
+
+export function validateGoogleLogin(body = {}) {
+  const errors = []
+  if (!isNonEmptyString(body.idToken)) errors.push('idToken is required')
+  return errors
+}

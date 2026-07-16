@@ -4,11 +4,17 @@ import { env } from '../config/env.js'
 export function authenticate(req, res, next) {
   const authHeader = req.headers.authorization
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  // The browser's native EventSource API can't set custom headers, so the
+  // SSE stream endpoint is the one place a token arrives via query string
+  // instead of Authorization — everywhere else still requires the header.
+  let token
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.slice('Bearer '.length).trim()
+  } else if (req.path === '/stream' && typeof req.query.token === 'string') {
+    token = req.query.token
+  } else {
     return res.status(401).json({ error: 'Authentication required' })
   }
-
-  const token = authHeader.slice('Bearer '.length).trim()
 
   try {
     const payload = jwt.verify(token, env.jwtSecret)

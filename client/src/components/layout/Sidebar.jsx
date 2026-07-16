@@ -3,22 +3,35 @@ import {
   LayoutDashboard,
   Sparkles,
   Receipt,
+  ClipboardList,
   CheckCircle2,
+  Activity,
   Settings,
   LogOut,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import NavItem from './NavItem.jsx'
+import { useAuth } from '../../hooks/useAuth.js'
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
-  { to: '/wallets', label: 'Wallets', icon: <Wallet size={18} /> },
   { to: '/ai-assistant', label: 'AI Assistant', icon: <Sparkles size={18} /> },
   { to: '/transactions', label: 'Transactions', icon: <Receipt size={18} /> },
+  { to: '/payment-requests', label: 'Payment Requests', icon: <ClipboardList size={18} /> },
   { to: '/approvals', label: 'Approvals', icon: <CheckCircle2 size={18} /> },
+  { to: '/observability', label: 'Observability', icon: <Activity size={18} /> },
   { to: '/settings', label: 'Settings', icon: <Settings size={18} /> },
 ]
 
 function Sidebar() {
+  const navigate = useNavigate()
+  const { logout } = useAuth()
+
+  function handleLogout() {
+    logout()
+    navigate('/login')
+  }
+
   return (
     <aside className="hidden w-64 flex-col border-r border-slate-200 bg-white p-4 lg:flex">
       <div className="mb-6 flex items-center gap-2 px-2">
@@ -35,7 +48,14 @@ function Sidebar() {
       </nav>
 
       <div className="mt-4 border-t border-slate-200 pt-4">
-        <NavItem to="/" label="Logout" icon={<LogOut size={18} />} />
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
+        >
+          <LogOut size={18} />
+          Logout
+        </button>
       </div>
     </aside>
   )

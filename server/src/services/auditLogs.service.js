@@ -1,10 +1,6 @@
 import * as auditLogsRepository from '../repositories/auditLogs.repository.js'
+import { fail } from '../utils/httpError.js'
 
-function fail(status, message) {
-  const error = new Error(message)
-  error.status = status
-  throw error
-}
 
 export async function create(userId, data) {
   try {

@@ -1,7 +1,7 @@
 import { isUuid, isNumber, isOneOf } from './common.js'
 
 const RISK_LEVELS = ['low', 'medium', 'high']
-const STATUS_VALUES = ['pending', 'approved', 'rejected', 'cancelled', 'expired']
+const STATUS_VALUES = ['pending', 'approved', 'rejected', 'cancelled', 'expired', 'completed']
 
 export function validateCreate(body = {}) {
   const errors = []

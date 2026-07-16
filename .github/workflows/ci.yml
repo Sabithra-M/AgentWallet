@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-client:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_API_BASE_URL: http://localhost:5000
+
+  build-server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - name: Boot smoke test
+        # No database is available in CI — the server is designed to boot
+        # and serve HTTP even when Postgres is unreachable (logging the
+        # failure instead of crashing), so /health responding at all
+        # (200 or 503 — anything but "connection refused") proves the app
+        # starts up and routes correctly.
+        run: |
+          JWT_SECRET=ci-smoke-test-secret node src/server.js &
+          SERVER_PID=$!
+          STATUS=""
+          for i in $(seq 1 10); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/health || echo "000")
+            if [ "$STATUS" != "000" ]; then break; fi
+            sleep 1
+          done
+          kill $SERVER_PID
+          echo "Health check responded with status $STATUS"
+          [ "$STATUS" != "000" ] || (echo "Server did not respond" && exit 1)

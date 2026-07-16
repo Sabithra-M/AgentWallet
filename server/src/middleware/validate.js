@@ -10,11 +10,41 @@ export function validateBody(validatorFn) {
   }
 }
 
+export function validateQuery(validatorFn) {
+  return (req, res, next) => {
+    const errors = validatorFn(req.query ?? {})
+    if (errors.length > 0) {
+      return res.status(400).json({ error: 'Validation failed', details: errors })
+    }
+    next()
+  }
+}
+
 export function validateIdParam(req, res, next) {
   if (!isUuid(req.params.id)) {
     return res.status(400).json({
       error: 'Validation failed',
       details: ['id route parameter must be a valid UUID'],
+    })
+  }
+  next()
+}
+
+export function validateMessageIdParam(req, res, next) {
+  if (!isUuid(req.params.messageId)) {
+    return res.status(400).json({
+      error: 'Validation failed',
+      details: ['messageId route parameter must be a valid UUID'],
+    })
+  }
+  next()
+}
+
+export function validateWalletIdParam(req, res, next) {
+  if (!isUuid(req.params.walletId)) {
+    return res.status(400).json({
+      error: 'Validation failed',
+      details: ['walletId route parameter must be a valid UUID'],
     })
   }
   next()

@@ -32,6 +32,14 @@ export async function update(id, data) {
   }
 }
 
+export async function updateSettings(id, data) {
+  try {
+    return await usersRepository.updateSettings(id, data)
+  } catch (error) {
+    throw error
+  }
+}
+
 export async function remove(id) {
   try {
     return await usersRepository.remove(id)

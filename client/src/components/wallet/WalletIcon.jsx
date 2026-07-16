@@ -1,14 +1,12 @@
-import { Plane, ShoppingBag, UtensilsCrossed, Receipt } from 'lucide-react'
+import { Wallet, Sparkles } from 'lucide-react'
 
 const CATEGORY_STYLES = {
-  travel: { icon: Plane, className: 'bg-sky-50 text-sky-600' },
-  shopping: { icon: ShoppingBag, className: 'bg-rose-50 text-rose-600' },
-  food: { icon: UtensilsCrossed, className: 'bg-amber-50 text-amber-600' },
-  bills: { icon: Receipt, className: 'bg-indigo-50 text-indigo-600' },
+  main: { icon: Wallet, className: 'bg-indigo-600 text-white' },
+  ai: { icon: Sparkles, className: 'bg-violet-50 text-violet-600' },
 }
 
 function WalletIcon({ category, size = 20 }) {
-  const config = CATEGORY_STYLES[category] ?? CATEGORY_STYLES.bills
+  const config = CATEGORY_STYLES[category] ?? CATEGORY_STYLES.ai
   const Icon = config.icon
 
   return (
